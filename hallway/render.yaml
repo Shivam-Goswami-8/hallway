@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: hallway
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/ice
+    envVars:
+      - { key: NODE_ENV, value: production }
+      - { key: NODE_VERSION, value: "20" }
+      - { key: EXTRA_DOMAINS, sync: false }
+      - { key: SUPABASE_URL, sync: false }
+      - { key: SUPABASE_SERVICE_KEY, sync: false }
+      - { key: SMTP_HOST, sync: false }
+      - { key: SMTP_PORT, sync: false }
+      - { key: SMTP_USER, sync: false }
+      - { key: SMTP_PASS, sync: false }
+      - { key: MAIL_FROM, sync: false }
+      - { key: TURN_URL, sync: false }
+      - { key: TURN_USER, sync: false }
+      - { key: TURN_PASS, sync: false }

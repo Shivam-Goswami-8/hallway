@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hallway</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#EEF0FF;--ink:#16162E;--pink:#FF5C8A;--sun:#FFD84D;--sky:#7C93FF;--mint:#6EE7B7;--card:#fff}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font-family:'Bricolage Grotesque',system-ui,sans-serif;background:var(--bg);color:var(--ink);padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.screen{display:none;min-height:100%;padding:24px;max-width:560px;margin:0 auto;flex-direction:column;gap:18px;justify-content:center}
+.screen.on{display:flex}
+h1{font-size:clamp(40px,11vw,64px);line-height:.95;font-weight:800;letter-spacing:-.03em}
+p.sub{font-size:18px;max-width:34ch}
+.card{background:var(--card);border:2px solid var(--ink);border-radius:24px;box-shadow:5px 5px 0 var(--ink);padding:18px;display:flex;flex-direction:column;gap:12px}
+input{font:inherit;font-size:17px;padding:14px 16px;border:2px solid var(--ink);border-radius:16px;background:#fff;color:var(--ink);width:100%}
+input:focus-visible,button:focus-visible{outline:3px solid var(--sky);outline-offset:2px}
+button{font:inherit;font-weight:600;font-size:17px;cursor:pointer;border:2px solid var(--ink);border-radius:999px;padding:13px 22px;background:#fff;color:var(--ink);box-shadow:3px 3px 0 var(--ink);transition:transform .08s,box-shadow .08s}
+button:active{transform:translate(3px,3px);box-shadow:0 0 0 var(--ink)}
+button.go{background:var(--pink);font-size:26px;font-weight:800;padding:20px;border-radius:28px;box-shadow:6px 6px 0 var(--ink)}
+button.go:active{transform:translate(6px,6px)}
+.pills{display:flex;gap:8px;flex-wrap:wrap}
+.pill{padding:9px 16px;font-size:15px;box-shadow:none}
+.pill.sel{background:var(--sun)}
+.err{color:#C0153F;font-weight:600;min-height:1.2em}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--mint);border:2px solid var(--ink);margin-right:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{background:var(--sky);border:2px solid var(--ink);border-radius:999px;padding:3px 12px;font-size:14px}
+/* call */
+#call{max-width:none;padding:0;gap:0;justify-content:stretch;height:100%;background:var(--ink)}
+#stage{position:relative;flex:1;min-height:0;overflow:hidden}
+#remote{width:100%;height:100%;object-fit:cover;background:#23234a}
+#local{position:absolute;right:14px;bottom:14px;width:28vw;max-width:150px;aspect-ratio:3/4;object-fit:cover;border:2px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);transform:scaleX(-1) rotate(2deg);background:#000}
+#status{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;font-size:24px;font-weight:800;text-align:center;padding:24px;background:rgba(22,22,46,.55)}
+#status.off{display:none}
+#peer{position:absolute;left:14px;top:14px;display:flex;gap:6px;flex-wrap:wrap;max-width:70%}
+#chat{position:absolute;left:14px;bottom:14px;width:calc(72% - 28px);display:flex;flex-direction:column;gap:6px;max-height:40%;overflow:hidden;justify-content:flex-end;pointer-events:none}
+#chat div{background:#fff;border:2px solid var(--ink);border-radius:14px;padding:6px 12px;font-size:15px;width:fit-content;max-width:100%;word-break:break-word}
+#chat div.me{background:var(--sun)}
+#bar{background:var(--bg);border-top:2px solid var(--ink);padding:12px;display:flex;flex-direction:column;gap:10px}
+#msgrow{display:flex;gap:8px}
+#msgrow input{padding:10px 14px}
+#acts{display:flex;gap:8px;justify-content:space-between}
+#acts button{padding:11px 14px;font-size:15px;flex:1}
+#skip{background:var(--pink)}
+#conn{background:var(--mint)}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--sun);border:2px solid var(--ink);border-radius:18px;box-shadow:4px 4px 0 var(--ink);padding:12px 18px;font-weight:600;z-index:9;max-width:90vw;text-align:center}
+@media (prefers-reduced-motion:reduce){button{transition:none}}
+</style>
+</head>
+<body>
+
+<section id="login" class="screen on">
+  <h1>Meet the person from the next campus over.</h1>
+  <p class="sub">Random video chats, only with verified students.</p>
+  <div class="card">
+    <input id="email" type="email" inputmode="email" autocomplete="email" placeholder="you@youruniversity.ac.in">
+    <input id="code" inputmode="numeric" maxlength="6" placeholder="6-digit code" style="display:none">
+    <button id="loginBtn" class="go" style="font-size:20px;padding:14px">Send code</button>
+    <div id="loginErr" class="err" role="alert"></div>
+  </div>
+</section>
+
+<section id="home" class="screen">
+  <div><span class="dot"></span><span id="online">…</span> students online</div>
+  <h1>Say hi to someone new.</h1>
+  <div class="card">
+    <b>Who do you want to meet?</b>
+    <div class="pills" id="scopes">
+      <button class="pill sel" data-s="any">Anyone</button>
+      <button class="pill" data-s="same">My uni</button>
+      <button class="pill" data-s="other">Other unis</button>
+    </div>
+    <input id="interests" placeholder="Interests: hackathons, anime, gym">
+    <input id="handle" placeholder="Your Instagram or LinkedIn (shared only if you both connect)">
+  </div>
+  <button id="start" class="go">Start</button>
+  <p class="sub" style="font-size:14px">Be kind. Reports go straight to moderation, and 3 reports means a ban.</p>
+</section>
+
+<section id="call" class="screen">
+  <div id="stage">
+    <video id="remote" autoplay playsinline></video>
+    <video id="local" autoplay playsinline muted></video>
+    <div id="peer"></div>
+    <div id="chat" aria-live="polite"></div>
+    <div id="status"><span id="statusTxt">Finding someone…</span></div>
+  </div>
+  <div id="bar">
+    <form id="msgrow"><input id="msg" placeholder="Say something…" autocomplete="off"><button>Send</button></form>
+    <div id="acts">
+      <button id="mic">Mute</button>
+      <button id="cam">Cam off</button>
+      <button id="conn">Connect</button>
+      <button id="report">Report</button>
+      <button id="skip">Skip</button>
+    </div>
+  </div>
+</section>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const show = id => document.querySelectorAll('.screen').forEach(s => s.classList.toggle('on', s.id === id));
+const toast = t => { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.append(d); setTimeout(() => d.remove(), 4000); };
+const api = (u, b) => fetch(u, { method: b ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json' }, body: b && JSON.stringify(b) }).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Something went wrong'); return j; });
+
+let token = localStorage.token, scope = 'any', socket, pc, localStream, ice, codeSent = false;
+
+// ---- login ----
+$('loginBtn').onclick = async () => {
+  $('loginErr').textContent = '';
+  try {
+    if (!codeSent) {
+      const r = await api('/api/otp', { email: $('email').value });
+      codeSent = true; $('code').style.display = 'block'; $('loginBtn').textContent = 'Verify';
+      $('loginErr').textContent = r.dev ? 'Dev mode: the code is in your server terminal.' : 'Code sent. Check your inbox.';
+    } else {
+      const r = await api('/api/verify', { email: $('email').value, code: $('code').value });
+      token = localStorage.token = r.token; enterHome();
+    }
+  } catch (e) { $('loginErr').textContent = e.message; }
+};
+
+// ---- home ----
+$('handle').value = localStorage.handle || '';
+$('scopes').onclick = e => { const b = e.target.closest('.pill'); if (!b) return; scope = b.dataset.s; document.querySelectorAll('.pill').forEach(p => p.classList.toggle('sel', p === b)); };
+function connectSocket() {
+  socket = io({ auth: { token } });
+  socket.on('connect_error', e => { if (e.message === 'auth') { localStorage.removeItem('token'); token = null; show('login'); } else toast(e.message === 'banned' ? 'This account is banned.' : 'Connection problem.'); });
+  socket.on('online', n => $('online').textContent = n);
+  socket.on('searching', () => setStatus('Finding someone…'));
+  socket.on('matched', onMatched);
+  socket.on('signal', onSignal);
+  socket.on('partner-left', () => { toast('They left.'); next(); });
+  socket.on('chat', m => addMsg(m, false));
+  socket.on('partner-wants-connect', () => toast('They want to connect. Tap Connect too!'));
+  socket.on('connected', d => { toast('Connected! Their handle: ' + d.handle); addMsg('Their handle: ' + d.handle, false); });
+  socket.on('banned', () => { toast('You were banned after multiple reports.'); show('login'); });
+}
+function enterHome() { show('home'); if (!socket) connectSocket(); }
+if (token) enterHome();
+
+// ---- call ----
+const setStatus = t => { $('status').classList.remove('off'); $('statusTxt').textContent = t; };
+const addMsg = (t, me) => { const d = document.createElement('div'); d.textContent = t; if (me) d.className = 'me'; $('chat').append(d); while ($('chat').children.length > 6) $('chat').firstChild.remove(); };
+
+$('start').onclick = async () => {
+  try {
+    localStorage.handle = $('handle').value;
+    ice = ice || await api('/api/ice');
+    localStream = localStream || await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: true });
+    $('local').srcObject = localStream;
+    show('call'); next();
+  } catch (e) { toast('Allow camera and mic to start. (' + e.message + ')'); }
+};
+
+function next() {
+  closePC(); $('peer').innerHTML = ''; $('chat').innerHTML = '';
+  setStatus('Finding someone…');
+  const interests = $('interests').value.split(',').map(s => s.trim()).filter(Boolean);
+  socket.emit('find', { scope, interests, handle: $('handle').value });
+}
+function closePC() { if (pc) { pc.close(); pc = null; } $('remote').srcObject = null; }
+
+async function onMatched({ initiator, peer }) {
+  $('peer').innerHTML = `<span class="chip">${peer.uni}</span>` + peer.interests.map(i => `<span class="chip">${i.replace(/[<>&]/g, '')}</span>`).join('');
+  setStatus('Connecting…');
+  pc = new RTCPeerConnection(ice);
+  localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+  pc.onicecandidate = e => e.candidate && socket.emit('signal', { candidate: e.candidate });
+  pc.ontrack = e => { $('remote').srcObject = e.streams[0]; $('status').classList.add('off'); };
+  pc.onconnectionstatechange = () => { if (pc && pc.connectionState === 'failed') { toast('Connection failed. Skipping.'); socket.emit('skip'); next(); } };
+  if (initiator) {
+    await pc.setLocalDescription(await pc.createOffer());
+    socket.emit('signal', { desc: pc.localDescription });
+  }
+}
+async function onSignal({ desc, candidate }) {
+  if (!pc) return;
+  try {
+    if (desc) {
+      await pc.setRemoteDescription(desc);
+      if (desc.type === 'offer') { await pc.setLocalDescription(await pc.createAnswer()); socket.emit('signal', { desc: pc.localDescription }); }
+    } else if (candidate) await pc.addIceCandidate(candidate);
+  } catch (e) { console.warn(e); }
+}
+
+$('skip').onclick = () => { socket.emit('skip'); next(); };
+$('report').onclick = () => { if (confirm('Report this person and skip?')) { socket.emit('report'); toast('Reported. Thanks for keeping this safe.'); next(); } };
+$('conn').onclick = () => { socket.emit('connect-me'); toast('Request sent. You both need to tap Connect.'); };
+$('msgrow').onsubmit = e => { e.preventDefault(); const m = $('msg').value.trim(); if (!m) return; socket.emit('chat', m); addMsg(m, true); $('msg').value = ''; };
+$('mic').onclick = () => { const t = localStream.getAudioTracks()[0]; t.enabled = !t.enabled; $('mic').textContent = t.enabled ? 'Mute' : 'Unmute'; };
+$('cam').onclick = () => { const t = localStream.getVideoTracks()[0]; t.enabled = !t.enabled; $('cam').textContent = t.enabled ? 'Cam off' : 'Cam on'; };
+</script>
+</body>
+</html>
